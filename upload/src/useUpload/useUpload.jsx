@@ -32,9 +32,11 @@ const getSize = (value) => {
   }
 }
 
-export default function Upload ({ autoUpload, children, extensions, id, removeProgressbar, size, success, url }) {
+export default function Upload ({ autoUpload, children, extensions, id, removeProgressbar, size, success, url, parameter }) {
   const instances = {}
   const uploadRef = useRef()
+
+  parameter = parameter || (Math.random() + 1).toString(36).substring(2)
 
   const message = (value) => {
     value = value.replace(/\n/, '<br />')
@@ -61,8 +63,9 @@ export default function Upload ({ autoUpload, children, extensions, id, removePr
     return fl.toLowerCase() + ext
   }
 
-  const removeFile = (runningInstance) => {
-    runningInstance.element.remove()
+  const removeFile = (idx, ins) => {
+    ins[idx].element.remove()
+    delete ins[idx]
   }
 
   const sliceUpload = (instance) =>
@@ -85,7 +88,9 @@ export default function Upload ({ autoUpload, children, extensions, id, removePr
           'X-Slice': instance.current.toString(),
           'X-Slices': instance.slices.toString(),
           'X-File-Size': instance.file.size.toString(),
-          'X-Slice-Size': instance.end.toString()
+          'X-Slice-Size': instance.end.toString(),
+          'X-Unique': instance.unique,
+          'X-Parameter': parameter
         },
         body: data
       })
@@ -134,7 +139,7 @@ export default function Upload ({ autoUpload, children, extensions, id, removePr
 
         if (k === instance.slices) {
           if (instance.removeProgressbar === true) {
-            removeFile(ins[idx])
+            removeFile(idx, ins)
           }
           instance.success(obj)
         } else {
@@ -177,7 +182,9 @@ export default function Upload ({ autoUpload, children, extensions, id, removePr
           chunkSize,
           url: upload.url,
           removeProgressbar: upload.removeProgressbar,
-          success: upload.success
+          success: upload.success,
+          unique: `${file.size}${performance.now()}`,
+          parameter: upload.parameter
         }
 
         li.onclick = (e) => {
@@ -186,7 +193,7 @@ export default function Upload ({ autoUpload, children, extensions, id, removePr
             if (instances[idx] !== undefined) {
               instances[idx].running = null
             }
-            removeFile(instances[idx])
+            removeFile(idx, instances)
           }
         }
         if (upload.autoUpload === true) {
@@ -304,6 +311,7 @@ Upload.defaultProps = {
   size: 1024 * 1024 * 32,
   extensions: 'jpg gif webp png',
   children: 'File upload',
+  parameter: null,
   success: () => {
   }
 }
@@ -316,5 +324,6 @@ Upload.propTypes = {
   size: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   extensions: PropTypes.string,
   success: PropTypes.func.isRequired,
-  children: PropTypes.node
+  children: PropTypes.node,
+  parameter: PropTypes.string
 }

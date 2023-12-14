@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"multipleFileUpload/upload"
 	"net/http"
 )
@@ -15,16 +14,19 @@ func fileUpload(w http.ResponseWriter, r *http.Request) {
 		Request:    r,
 		Path:       "./static/images/",
 		Extensions: "gif jpg png webp",
+		Name:       "image",
+		Normalize:  true,
 		Size:       1024 * 1024 * 32,
-		Success: func(file string, idx string) {
+		Success: func(u upload.SuccessObject) {
 			Upload.Response(upload.Message{
-				File: file,
+				Id:        u.Id,
+				File:      u.File,
+				Path:      u.Path,
+				Name:      u.Name,
+				Parameter: u.Parameter,
 			}, w)
 		},
 		Error: func(err error, httpErrorStatus int) {
-
-			log.Printf("Error: %v", err)
-
 			Upload.Response(upload.Message{
 				Error:  err.Error(),
 				Status: httpErrorStatus,
@@ -34,13 +36,14 @@ func fileUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	http.HandleFunc("/upload", fileUpload)
 
 	fs := http.FileServer(http.Dir("./static/images"))
 
 	http.Handle("/static/images/", http.StripPrefix("/static/images/", fs))
 
-	err := http.ListenAndServe(":8000", nil)
+	err := http.ListenAndServe("localhost:8000", nil)
 	if err != nil {
 		return
 	}
