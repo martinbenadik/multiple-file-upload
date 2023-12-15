@@ -15,6 +15,7 @@ func fileUpload(w http.ResponseWriter, r *http.Request) {
 		Path:       "./static/images/",
 		Extensions: "gif jpg png webp",
 		Name:       "image",
+		Sub:        Upload.Parameter(r),
 		Normalize:  true,
 		Size:       1024 * 1024 * 32,
 		Success: func(u upload.SuccessObject) {
